@@ -1,4 +1,4 @@
-// src/pages/MaterialiTab.tsx (con upload simulato)
+// src/pages/MaterialiTab.tsx
 import { useEffect, useState } from "react";
 import {
   Typography,
@@ -19,7 +19,7 @@ const MaterialiTab = ({ corsoId }: { corsoId: string }) => {
     titolo: string;
     contenuto: string;
   }
-  
+
   const [materiali, setMateriali] = useState<Materiale[]>([]);
   const [titolo, setTitolo] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -36,14 +36,21 @@ const MaterialiTab = ({ corsoId }: { corsoId: string }) => {
       reader.onerror = (error) => reject(error);
     });
   };
+
   const handleAggiungi = async () => {
     if (!titolo || !file) return;
-    const base64 = await convertFileToBase64(file);
-    await api.post("/materiali", { titolo, contenuto: base64, corsoId });
-    const res = await api.get<Materiale[]>(`/materiali?corsoId=${corsoId}`);
-    setMateriali(res.data);
-    setTitolo("");
-    setFile(null);
+
+    try {
+      const base64 = await convertFileToBase64(file);
+      await api.post("/materiali", { titolo, contenuto: base64, corsoId });
+      const res = await api.get<Materiale[]>(`/materiali?corsoId=${corsoId}`);
+      setMateriali(res.data);
+      setTitolo("");
+      setFile(null);
+    } catch (error) {
+      console.error("Errore durante il caricamento del file:", error);
+      alert("Errore durante il caricamento del file.");
+    }
   };
 
   const handleRimuovi = async (id: string) => {
@@ -52,25 +59,24 @@ const MaterialiTab = ({ corsoId }: { corsoId: string }) => {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const selected = e.target.files?.[0] || null;
-  if (!selected) return;
+    const selected = e.target.files?.[0] || null;
+    if (!selected) return;
 
-  const isPdf = selected.type === "application/pdf";
-  const isSizeOk = selected.size <= 10 * 1024 * 1024;
+    const isPdf = selected.type === "application/pdf";
+    const isSizeOk = selected.size <= 10 * 1024 * 1024;
 
-  if (!isPdf) {
-    alert("Puoi caricare solo file PDF.");
-    return;
-  }
+    if (!isPdf) {
+      alert("Puoi caricare solo file PDF.");
+      return;
+    }
 
-  if (!isSizeOk) {
-    alert("Il file deve essere inferiore a 10MB.");
-    return;
-  }
+    if (!isSizeOk) {
+      alert("Il file deve essere inferiore a 10MB.");
+      return;
+    }
 
-  setFile(selected);
-};
-
+    setFile(selected);
+  };
 
   return (
     <>
@@ -95,7 +101,7 @@ const MaterialiTab = ({ corsoId }: { corsoId: string }) => {
               </>
             }
           >
-            <ListItemText primary={m.titolo} secondary={file ? file.name : ""} />
+            <ListItemText primary={m.titolo} />
           </ListItem>
         ))}
       </List>

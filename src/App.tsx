@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { lazy, Suspense } from 'react';
+import DettaglioUtente from "./pages/DettaglioUtente";
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -47,7 +48,7 @@ function App() {
               path="/utenti/:id"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <GestioneUtenti />
+                  <DettaglioUtente />
                 </ProtectedRoute>
               }
             />

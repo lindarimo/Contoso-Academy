@@ -86,6 +86,15 @@ const ProfiloUtente = () => {
     api.get(`/materiali`).then((res) => setMateriali(res.data as Materiale[]));
   }, [user]);
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && utente) {
@@ -94,11 +103,9 @@ const ProfiloUtente = () => {
         return;
       }
 
-      const filename = file.name;
-      const imagePath = `uploads/${filename}`;
-
-      await api.patch(`/utenti/${utente.id}`, { profileImage: imagePath });
-      setUtente({ ...utente, profileImage: imagePath });
+      const base64 = await convertFileToBase64(file);
+      await api.patch(`/utenti/${utente.id}`, { profileImage: base64 });
+      setUtente({ ...utente, profileImage: base64 });
       alert("Foto profilo aggiornata");
     }
   };
@@ -120,7 +127,7 @@ const ProfiloUtente = () => {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box display="flex" alignItems="center" gap={2}>
           <Avatar
-            src={utente.profileImage ? `/${utente.profileImage}` : undefined}
+            src={utente.profileImage}
             sx={{ width: 64, height: 64 }}
           />
           <Box>
