@@ -1,4 +1,3 @@
-// src/pages/ProfiloUtente.tsx (uso di useAuth e user.email per recuperare il profilo)
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -60,14 +59,12 @@ const ProfiloUtente = () => {
   const [lezioni, setLezioni] = useState<Lezione[]>([]);
   const [materiali, setMateriali] = useState<Materiale[]>([]);
   const [valutazioni, setValutazioni] = useState<Valutazione[]>([]);
-  const [avatar, setAvatar] = useState<string>("");
 
   useEffect(() => {
     if (!user?.email) return;
     api.get(`/utenti?email=${user.email}`).then((res) => {
       const result = Array.isArray(res.data) ? res.data[0] : res.data;
       setUtente(result);
-      setAvatar(result.avatarUrl || "");
 
       api.get(`/iscritti?utenteId=${result.id}`).then(async (res) => {
         const corsiUtenteIds = (res.data as { corsoId: string }[]).map(
@@ -77,8 +74,7 @@ const ProfiloUtente = () => {
           api.get(`/corsi/${id}`)
         );
         const corsiUtenteResponses = await Promise.all(corsiUtentePromises);
-        const corsiUtente = corsiUtenteResponses.map((r) => r.data as Corso);
-        setCorsi(corsiUtente);
+        setCorsi(corsiUtenteResponses.map((r) => r.data as Corso));
       });
 
       api
@@ -97,14 +93,13 @@ const ProfiloUtente = () => {
         alert("Puoi caricare solo file PNG o JPEG.");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        setAvatar(base64);
-        await api.patch(`/utenti/${utente.id}`, { profileImage: base64 });
-        alert("Foto profilo aggiornata");
-      };
-      reader.readAsDataURL(file);
+
+      const filename = file.name;
+      const imagePath = `uploads/${filename}`;
+
+      await api.patch(`/utenti/${utente.id}`, { profileImage: imagePath });
+      setUtente({ ...utente, profileImage: imagePath });
+      alert("Foto profilo aggiornata");
     }
   };
 
@@ -124,7 +119,10 @@ const ProfiloUtente = () => {
 
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar src={avatar} sx={{ width: 64, height: 64 }} />
+          <Avatar
+            src={utente.profileImage ? `/${utente.profileImage}` : undefined}
+            sx={{ width: 64, height: 64 }}
+          />
           <Box>
             <Typography variant="h6">{utente.username}</Typography>
             <Typography variant="body2">{utente.email}</Typography>
