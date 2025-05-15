@@ -1,3 +1,4 @@
+// src/pages/ProfiloUtente.tsx
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -62,29 +63,43 @@ const ProfiloUtente = () => {
 
   useEffect(() => {
     if (!user?.email) return;
-    api.get(`/utenti?email=${user.email}`).then((res) => {
-      const result = Array.isArray(res.data) ? res.data[0] : res.data;
-      setUtente(result);
 
-      api.get(`/iscritti?utenteId=${result.id}`).then(async (res) => {
-        const corsiUtenteIds = (res.data as { corsoId: string }[]).map(
-          (i) => i.corsoId
-        );
-        const corsiUtentePromises = corsiUtenteIds.map((id) =>
-          api.get(`/corsi/${id}`)
-        );
-        const corsiUtenteResponses = await Promise.all(corsiUtentePromises);
-        setCorsi(corsiUtenteResponses.map((r) => r.data as Corso));
-      });
+    const fetchUserData = async () => {
+      try {
+        const resUtente = await api.get(`/utenti?email=${user.email}`);
+        const utenteTrovato = Array.isArray(resUtente.data) ? resUtente.data[0] : resUtente.data;
+        setUtente(utenteTrovato);
 
-      api
-        .get(`/valutazioni?utenteId=${result.id}`)
-        .then((res) => setValutazioni(res.data as Valutazione[]));
-    });
+        const resIscritti = await api.get(`/iscritti?utenteId=${utenteTrovato.id}`);
+        const corsoIds = (resIscritti.data as { corsoId: string }[]).map(i => i.corsoId);
+        const corsiData = await Promise.all(corsoIds.map(id => api.get(`/corsi/${id}`)));
+        setCorsi(corsiData.map(r => r.data as Corso));
 
-    api.get(`/lezioni`).then((res) => setLezioni(res.data as Lezione[]));
-    api.get(`/materiali`).then((res) => setMateriali(res.data as Materiale[]));
-  }, [user]);
+        const resValutazioni = await api.get(`/valutazioni?utenteId=${utenteTrovato.id}`);
+        setValutazioni(resValutazioni.data as Valutazione[]);
+      } catch (err) {
+        console.error("Errore caricamento dati profilo", err);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.email]);
+
+  useEffect(() => {
+    const fetchStaticData = async () => {
+      try {
+        const lezioniRes = await api.get("/lezioni");
+        setLezioni(lezioniRes.data as Lezione[]);
+
+        const materialiRes = await api.get("/materiali");
+        setMateriali(materialiRes.data as Materiale[]);
+      } catch (err) {
+        console.error("Errore caricamento lezioni o materiali", err);
+      }
+    };
+
+    fetchStaticData();
+  }, []);
 
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
