@@ -1,4 +1,3 @@
-// src/pages/CorsoDettaglio.tsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -37,8 +36,8 @@ const CorsoDettaglio = () => {
 
   return (
     <Box px={4} py={3}>
-      <Button onClick={() => navigate("/dashboard")} variant="outlined" sx={{ mb: 2 }}>
-        ← Torna alla Dashboard
+      <Button onClick={() => navigate(-1)} variant="outlined" sx={{ mb: 2 }}>
+        ← Indietro
       </Button>
 
       <Typography variant="h5" gutterBottom>

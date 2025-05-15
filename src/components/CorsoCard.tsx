@@ -29,13 +29,19 @@ const CorsoCard = ({ corso, onEdit, onDelete, children }: Props) => {
     chiuso: "default",
   } as const;
 
+  // fallback a un'immagine placeholder se non presente
+  const immagineSrc = corso.immagine?.startsWith("data:")
+    ? corso.immagine
+    : "/logo.svg";
+
   return (
     <Card>
       <CardMedia
         component="img"
         height="140"
-        image={corso.immagine}
+        image={immagineSrc}
         alt={`Corso ${corso.titolo}`}
+        sx={{ objectFit: "contain", backgroundColor: "#fff" }}
       />
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -54,17 +60,14 @@ const CorsoCard = ({ corso, onEdit, onDelete, children }: Props) => {
         <Typography variant="caption" display="block" mt={1}>
           Iscritti: {corso.iscritti}
         </Typography>
-        <Box display="flex" justifyContent="flex-end" mt={1}>
+        <Box display="flex" justifyContent="flex-end" gap={1} mt={1} flexWrap="wrap">
           <IconButton onClick={() => onEdit?.(corso)}>
             <EditIcon fontSize="small" />
           </IconButton>
           <IconButton onClick={() => onDelete?.(corso.id)}>
             <DeleteIcon fontSize="small" />
           </IconButton>
-          <Link
-            to={`/corsi/${corso.id}`}
-            style={{ textDecoration: "none", width: "100%" }}
-          >
+          <Link to={`/corsi/${corso.id}`} style={{ textDecoration: "none", flexGrow: 1 }}>
             <Button variant="outlined" fullWidth>
               Vai al dettaglio
             </Button>

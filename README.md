@@ -1,6 +1,7 @@
-# Avviare due terminali in un terminale avviare il backend mock con il seguente comando:
+# Avviare due terminali. 
+# In un terminale avviare il backend mock con il seguente comando:
 
-npx json-server --watch db.json
+json-server --watch db.json --port 3000
 
 se non funziona, prima installare json-server con il comando:
 
@@ -10,3 +11,6 @@ e lanciare il comando:
 
 json-server --watch db.json
 
+# in un terminale avviare l'applicazione con: 
+
+npm run dev

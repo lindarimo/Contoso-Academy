@@ -1,5 +1,5 @@
 // src/pages/ProfiloUtente.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -14,8 +14,11 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  TextField,
+  Stack
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 
@@ -55,20 +58,26 @@ interface Valutazione {
 
 const ProfiloUtente = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [utente, setUtente] = useState<Utente | null>(null);
   const [corsi, setCorsi] = useState<Corso[]>([]);
   const [lezioni, setLezioni] = useState<Lezione[]>([]);
   const [materiali, setMateriali] = useState<Materiale[]>([]);
   const [valutazioni, setValutazioni] = useState<Valutazione[]>([]);
+  const [emailEdit, setEmailEdit] = useState("");
+  const [editVisible, setEditVisible] = useState(false);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.email || fetchedRef.current) return;
+    fetchedRef.current = true;
 
     const fetchUserData = async () => {
       try {
         const resUtente = await api.get(`/utenti?email=${user.email}`);
         const utenteTrovato = Array.isArray(resUtente.data) ? resUtente.data[0] : resUtente.data;
         setUtente(utenteTrovato);
+        setEmailEdit(utenteTrovato.email);
 
         const resIscritti = await api.get(`/iscritti?utenteId=${utenteTrovato.id}`);
         const corsoIds = (resIscritti.data as { corsoId: string }[]).map(i => i.corsoId);
@@ -125,6 +134,15 @@ const ProfiloUtente = () => {
     }
   };
 
+  const handleEmailSave = async () => {
+    if (utente && emailEdit) {
+      await api.patch(`/utenti/${utente.id}`, { email: emailEdit });
+      setUtente({ ...utente, email: emailEdit });
+      alert("Email aggiornata");
+      setEditVisible(false);
+    }
+  };
+
   if (!utente) return null;
 
   return (
@@ -152,50 +170,76 @@ const ProfiloUtente = () => {
           </Box>
         </Box>
 
-        <Box mt={2}>
+        <Stack direction="row" spacing={2} mt={2}>
           <Button variant="contained" component="label">
             Carica Foto
             <input hidden accept="image/png, image/jpeg, image/jpg" type="file" onChange={handleUpload} />
           </Button>
-        </Box>
+          <Button variant="outlined" onClick={() => setEditVisible(!editVisible)}>
+            Aggiorna contatto
+          </Button>
+        </Stack>
+
+        {editVisible && (
+          <Box mt={2}>
+            <TextField
+              label="Email"
+              variant="outlined"
+              value={emailEdit}
+              onChange={(e) => setEmailEdit(e.target.value)}
+              fullWidth
+              sx={{ mb: 1 }}
+            />
+            <Button onClick={handleEmailSave} variant="contained">Salva Email</Button>
+          </Box>
+        )}
       </Paper>
 
-      <Typography variant="h6">Corsi</Typography>
-      {corsi.map((corso) => (
-        <Accordion key={corso.id}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography>{corso.titolo}</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Typography variant="subtitle2">Lezioni</Typography>
-            <List dense>
-              {lezioni
-                .filter((l) => l.corsoId === corso.id)
-                .map((lez) => (
-                  <ListItem key={lez.id}>
-                    <ListItemText primary={`${lez.data} - ${lez.argomento}`} />
-                  </ListItem>
-                ))}
-            </List>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="subtitle2">Materiali</Typography>
-            <List dense>
-              {materiali
-                .filter((m) => m.corsoId === corso.id)
-                .map((mat) => (
-                  <ListItem key={mat.id}>
-                    <ListItemText primary={mat.titolo} />
-                  </ListItem>
-                ))}
-            </List>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="subtitle2">Valutazione</Typography>
-            <Typography>
-              {valutazioni.find((v) => v.corsoId === corso.id)?.voto ?? "-"}
-            </Typography>
-          </AccordionDetails>
-        </Accordion>
-      ))}
+      {utente.role === "studente" && (
+        <>
+          <Typography variant="h6">Corsi</Typography>
+          {corsi.map((corso) => (
+            <Accordion key={corso.id}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography>{corso.titolo}</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="subtitle2">Lezioni</Typography>
+                <List dense>
+                  {lezioni
+                    .filter((l) => l.corsoId === corso.id)
+                    .map((lez) => (
+                      <ListItem key={lez.id}>
+                        <ListItemText primary={`${lez.data} - ${lez.argomento}`} />
+                      </ListItem>
+                    ))}
+                </List>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle2">Materiali</Typography>
+                <List dense>
+                  {materiali
+                    .filter((m) => m.corsoId === corso.id)
+                    .map((mat) => (
+                      <ListItem key={mat.id}>
+                        <ListItemText primary={mat.titolo} />
+                      </ListItem>
+                    ))}
+                </List>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle2">Valutazione</Typography>
+                <Typography>
+                  {valutazioni.find((v) => v.corsoId === corso.id)?.voto ?? "-"}
+                </Typography>
+                <Box mt={2}>
+                  <Button size="small" variant="outlined" onClick={() => navigate(`/corsi/${corso.id}`)}>
+                    Vedi dettaglio
+                  </Button>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          ))}
+        </>
+      )}
     </Box>
   );
 };
