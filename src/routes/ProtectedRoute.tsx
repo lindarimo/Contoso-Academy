@@ -1,24 +1,22 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { JSX } from 'react';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: 'admin' | 'studente';
+  children: JSX.Element;
+  requiredRole: 'admin' | 'studente' | Array<'admin' | 'studente'>;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return <Navigate to="/" />;
 
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/login" replace />;
-  }
+  const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
 
-  return <>{children}</>;
+  if (!roles.includes(user.role)) return <Navigate to="/" />;
+
+  return children;
 };
 
 export default ProtectedRoute;
